@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Federated Learning Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f8f8;  /* Light grey background */
+            color: #333;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #d26ea3;  /* Light pink color */
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #d26ea3;  /* Light pink color */
+            color: white;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 20px 0;
+        }
+
+        button:hover {
+            background-color: #b85b8e;  /* Darker pink */
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;  /* White background */
+            border: 1px solid #d26ea3;  /* Light pink border */
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .status h2 {
+            color: #d26ea3;
+            margin-bottom: 10px;
+        }
+
+        .client-list {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #fff;  /* White background */
+            border: 1px solid #d26ea3;  /* Light pink border */
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .client {
+            margin: 10px 0;
+        }
+
+        .notification {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #dff0d8;  /* Light green background */
+            border: 1px solid #d6e9c6;
+            color: #3c763d;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        input[type="file"], input[type="submit"] {
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input[type="file"] {
+            background-color: #fff;
+        }
+
+        input[type="submit"] {
+            background-color: #d26ea3;  /* Light pink color */
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #b85b8e;  /* Darker pink */
+        }
+
+        .result-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #fff;  /* White background */
+            border: 1px solid #d26ea3;  /* Light pink border */
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .result-section h3 {
+            color: #d26ea3;
+        }
+
+        .result-section p {
+            font-size: 18px;
+            color: #333;
+        }
+ input[type="submit"]:hover {
+            background-color: #b85b8e;
+        }
+ /* Your existing styles... */
+
+        .metrics-table {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .metrics-table th, .metrics-table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        .metrics-table th {
+            background-color: #f2f2f2;
+        }
+
+        .metrics-table td {
+            background-color: #f9f9f9;
+        }
+
+        .metrics-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border: 1px solid #d26ea3;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: none;
+        }    </style>
+</head>
+<body>
+    <h1>Federated Learning Dashboard</h1>
+
+    <!-- Register client button -->
+    <button onclick="registerClient()">Register Client</button>
+
+    <!-- Download Model Architecture Button -->
+    <button onclick="downloadModelArchitecture()">Download Model Architecture (ScoliosisCNN.py)</button>
+
+    <!-- Download Global Model Updates Button -->
+    <button onclick="downloadGlobalModelUpdates()">Download Global Model Updates</button>
+
+<div class="client-list">
+    <h2>Registered Clients</h2>
+    <ul id="clientList">
+        {% for client in clients %}
+            <li class="client">
+                <strong>{{ client.client_id }}</strong> - Status: {{ client.status }}
+                <!-- Show Accuracy & Metrics button -->
+                <button onclick="showMetrics('{{ client.client_id }}')">Show Accuracy & Metrics</button>
+
+                <!-- Metrics Table for Each Client -->
+                <div id="metrics-{{ client.client_id }}" class="metrics-section">
+                    <h3>Accuracy & Metrics for {{ client.client_id }}</h3>
+                    <table class="metrics-table">
+                        <thead>
+                            <tr>
+                                <th>Train Accuracy</th>
+                                <th>Validation Accuracy</th>
+                                <th>Test Accuracy</th>
+                                <th>Precision</th>
+                                <th>Recall</th>
+                                <th>F1-Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <!-- Use get to prevent errors if client metrics aren't available -->
+                                <td>{{ client_metrics.get(client.client_id, {}).get('train_accuracy', 'Not Available') }}</td>
+                                <td>{{ client_metrics.get(client.client_id, {}).get('val_accuracy', 'Not Available') }}</td>
+                                <td>{{ client_metrics.get(client.client_id, {}).get('test_accuracy', 'Not Available') }}</td>
+                                <td>{{ client_metrics.get(client.client_id, {}).get('precision', 'Not Available') }}</td>
+                                <td>{{ client_metrics.get(client.client_id, {}).get('recall', 'Not Available') }}</td>
+                                <td>{{ client_metrics.get(client.client_id, {}).get('f1_score', 'Not Available') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+    <!-- Model Testing Section -->
+    <div class="status">
+        <h2>Test the Global Model</h2>
+        <form id="testForm" action="/test_global_model" method="POST" enctype="multipart/form-data">
+            <label for="image">Upload X-ray Image:</label>
+            <input type="file" name="image" id="image" accept="image/*" required><br><br>
+            <input type="submit" value="Classify Image">
+        </form>
+
+        <div id="globalModelResult" class="result-section" style="display:none;">
+            <h3>Prediction Result:</h3>
+            <p><strong>Predicted Class: </strong><span id="predictionLabel"></span></p>
+            <p><strong>Confidence: </strong><span id="predictionConfidence"></span>%</p>
+        </div>
+    </div>
+<button onclick="evaluateGlobalModel()">Evaluate Global Model</button>
+
+<!-- Display the evaluation result -->
+<div id="evaluationResult" class="result-section" style="display: none;">
+    <h3>Global Model Evaluation Metrics:</h3>
+    <table class="metrics-table">
+        <thead>
+            <tr>
+                <th>Accuracy</th>
+                <th>Average Loss</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1 Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td id="evalAccuracy">Not Available</td>
+                <td id="evalAvgLoss">Not Available</td>
+                <td id="evalPrecision">Not Available</td>
+                <td id="evalRecall">Not Available</td>
+                <td id="evalF1Score">Not Available</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+    <!-- Notification -->
+    <div id="notification" class="notification" style="display: none;">
+        Client registered successfully!
+    </div>
+
+    <script>
+        // Register client function
+        function registerClient() {
+            const clientId = prompt("Enter the client ID:");
+            const port = prompt("Enter the port for the client:");
+
+            // Send the registration request to the server
+            fetch("http://127.0.0.1:5000/register_client", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ client_id: clientId, port: port })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                    // Update the client list
+                    const clientList = document.getElementById("clientList");
+                    const newClient = document.createElement("li");
+                    newClient.textContent = `${clientId} - Status: Registered`;
+                    clientList.appendChild(newClient);
+                    
+                    // Show the success notification
+                    const notification = document.getElementById("notification");
+                    notification.style.display = "block";
+                    setTimeout(() => notification.style.display = "none", 5000);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Registration failed!");
+            });
+        }
+
+        // Function to download the model architecture script (ScoliosisCNN.py)
+        function downloadModelArchitecture() {
+            window.location.href = "/get_model_architecture";
+        }
+
+        // Function to download the global model updates (global_model.pth)
+        function downloadGlobalModelUpdates() {
+            window.location.href = "/get_global_model_updates";
+        }
+  // Handle file submission and prediction display
+        const form = document.getElementById('testForm');
+        const resultSection = document.getElementById('globalModelResult');
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();  // Prevent default form submission
+
+            // Clear previous results
+            document.getElementById('predictionLabel').textContent = '';
+            document.getElementById('predictionConfidence').textContent = '';
+
+            const formData = new FormData(form);
+
+            fetch('/test_global_model', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                const prediction = data.predicted_label;
+                const confidence = data.confidence;
+
+                // Display the new prediction result
+                document.getElementById('predictionLabel').textContent = prediction;
+                document.getElementById('predictionConfidence').textContent = confidence;
+
+                // Show the result section
+                resultSection.style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error during prediction:', error);
+                alert('Error during prediction!');
+            });
+        });
+ // Show accuracy and evaluation metrics for each client
+        function showAccuracy(clientId) {
+            const accuracySection = document.getElementById(`accuracy-${clientId}`);
+            accuracySection.style.display = accuracySection.style.display === 'none' ? 'block' : 'none';
+        }
+// Function to show/hide the metrics for each client
+function showMetrics(clientId) {
+    const metricsSection = document.getElementById(`metrics-${clientId}`);
+    metricsSection.style.display = metricsSection.style.display === 'none' ? 'block' : 'none';
+}
+// Function to evaluate the global model
+function evaluateGlobalModel() {
+    fetch('/evaluate_global_model', {
+        method: 'POST',
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            alert(data.message);  // Show error message if the model isn't updated
+            // Reset the table with "Not Available" text
+            document.getElementById('evalAccuracy').textContent = 'Not Available';
+            document.getElementById('evalAvgLoss').textContent = 'Not Available';
+            document.getElementById('evalPrecision').textContent = 'Not Available';
+            document.getElementById('evalRecall').textContent = 'Not Available';
+            document.getElementById('evalF1Score').textContent = 'Not Available';
+        } else {
+            // Display the evaluation results in the table
+            document.getElementById('evalAccuracy').textContent = data.accuracy.toFixed(2) + '%';
+            document.getElementById('evalAvgLoss').textContent = data.avg_loss.toFixed(4);
+            document.getElementById('evalPrecision').textContent = data.precision.toFixed(4);
+            document.getElementById('evalRecall').textContent = data.recall.toFixed(4);
+            document.getElementById('evalF1Score').textContent = data.f1_score.toFixed(4);
+        }
+
+        // Show the result section
+        document.getElementById('evaluationResult').style.display = 'block';
+    })
+    .catch(error => {
+        console.error('Error during evaluation:', error);
+        alert('Error during evaluation!');
+    });
+}
+
+    </script>
+</body>
+</html>
